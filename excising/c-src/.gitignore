@@ -1,0 +1,9 @@
+.pydevproject
+__pycache__
+*.png
+.cproject
+.project
+.settings
+guess-inject
+*.o
+*.swp

@@ -1,0 +1,3 @@
+[submodule "PDF-Text-Analysis"]
+	path = PDF-Text-Analysis
+	url = git@github.com:maxwell-bland/PDF-Text-Analysis.git

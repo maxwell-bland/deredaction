@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+'''
+Reads in a pdf name, a font name, and a page, and 
+outputs the CID mappings for that font on the page
+in the format, where left of the | are direct mappings
+and right of the | are range mappings.
+
+cid unicode ... cid unicode|startcid endcid unicode ...
+0034 0021 ... 0045 0011|0033 0034 2014 ... 0043 0044 2414 
+'''
+from pdfreader import PDFDocument
+import sys
+from itertools import islice
+import re
+from lark import Lark
+import IPython
+
+cmapParse = Lark('''
+cid : "<" (HEXDIGIT+) ">"
+
+bfrange :  cid " "? cid " "? cid
+        | cid " " cid " [" (cid " "?)+ "]"
+
+bfrangedelim : "beginbfrange" bfrange+ "endbfrange"
+
+bfchar : cid " "? cid
+bfchardelim : "beginbfchar" bfchar+ "endbfchar"
+
+start : (bfchardelim|bfrangedelim)*
+
+%import common.HEXDIGIT
+''', parser='lalr')
+
+def traverse(mapT):
+    directs = []
+    ranges = []
+    def interpret(mapT):
+        if mapT.data == 'cid':
+            hexstr = ''
+            for c in mapT.children:
+                hexstr += c.value
+            hexstr = hexstr.lstrip('0')
+            if not hexstr:
+                hexstr = '0'
+            return hexstr
+        elif mapT.data == 'bfchar':
+            cid = interpret(mapT.children[0])
+            uni = interpret(mapT.children[1])
+            directs.append(cid + ' ' + uni)
+        elif mapT.data == 'bfrange':
+            start = interpret(mapT.children[0])
+            end = interpret(mapT.children[1])
+            uni = interpret(mapT.children[2])
+            ranges.append(start + ' ' + end + ' ' + uni)
+        else:
+            for c in mapT.children:
+                interpret(c)
+    interpret(mapT)
+    return (directs, ranges)
+
+
+cmapFound = False
+try:
+    fd = open(sys.argv[1], "rb")
+    pgnum = int(sys.argv[3]) - 1
+    doc = PDFDocument(fd)
+    pgs = doc.pages()
+    pg = next(pgs)
+    while pgnum:
+        pg = next(pgs)
+        pgnum -= 1
+
+    font_name_data = sys.argv[2].split(',')
+    font_id_num = int(font_name_data[0])
+    font_name = ','.join(font_name_data[1:])
+    for k,v in pg.Resources.Font.items():
+        ref = dict(pg.Resources.Font)[k]
+        f = pg.Resources.Font[k]
+        if 'ToUnicode' in f and ref.num == font_id_num and f['BaseFont'] == font_name:
+            cmap = str(f['ToUnicode'].filtered).replace('\\n', '\n')
+            ds, rs = traverse(cmapParse.parse(cmap, on_error=lambda x: True))
+            print(' '.join(ds) + '|' + ' '.join(rs))
+            cmapFound = True
+except:
+    pass
+
+if not cmapFound:
+    print('|')

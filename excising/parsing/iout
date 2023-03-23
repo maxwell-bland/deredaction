@@ -1,0 +1,22 @@
+#!/usr/bin/env perl
+# Parses the output of guess-inject into a nice format. Takes the target x
+# value as the first line and then the output of guess inject for the rest
+# prints the difference from the target wrt both the pre and post state of the
+# last character
+$targ = <>;
+$/ = "";
+while (<>) {
+        chomp;
+
+        /^(-?\d+\.?\d*)/;
+        $adjNoise = $1;
+
+        /[0-9]+\s.\s(\S+)\s(\S+)$/;
+        $diffs = sprintf("%.6f\t%.6f", $targ - $1, $targ - $2);
+
+        $str = "";
+        s/[0-9]+\s(.)(?:\s\S+){2}(?:\n|$)/$str = "$str$1"/ge;
+
+        print "$diffs\t$adjNoise\t[$str]\n";
+}
+

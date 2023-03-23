@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Meta Locate: $1: pdf $2: page number
+DIR=$(dirname $(realpath $0))
+source "$DIR"/../targeting/gti
+source "$DIR"/parsing/misc
+DIR=$(dirname $(realpath $0))
+
+get-font-from-bbx-out () {
+    rev | cut -d ' ' -f-2 | rev | sort | uniq
+}
+
+filter-line () {
+    while read y; do
+        yrnd=$(echo "print(int($y * 10000) / 10000)" | python3)
+        "$DIR"/../c-src/core/get-states "$tmppdf" | grep "y: $y\|$yrnd" > "$tmpmatchingbbx"
+        cat <(cat "$tmpmatchingbbx" | get-quanta) "$tmpmatchingbbx" | get-prefix-suffix > "$tmppresuf"
+        # Check whether a prefix and suffix were actually located
+        if [ $(wc -l "$tmppresuf" | cut -d ' ' -f1) -ge 3 ]; then
+            cat "$tmpmatchingbbx" | get-font-from-bbx-out > "$tmpfonts"
+            if [ "$(wc -l "$tmpfonts" | cut -d ' ' -f1)" == "1" ]; then
+                cat "$tmppresuf" | {
+                    read pre;
+                    read shf;
+                    read suf;
+                    c=$(echo "${pre::-1}""$shf""${suf:1}" |
+                            remove-adjs |
+                            tr -s ' ' ' ')
+                    c="${c:1:-1}"
+                    echo "Found Shift in $c" >&2
+                    ca=($c)
+                    if (( ${#ca[@]} > 5 )); then
+                        cat "$tmpfonts"
+                        echo "$pre"
+                        echo "$pre" | remove-space-adjs
+                        echo "$c"
+                    fi
+                }
+            fi
+        fi
+    done
+}
+
+
+decompress-pdf () {
+    tmppdfpage=$(mktemp)
+    fn=$(basename -- "$1")
+    timeout 15 pdfseparate -f $2 -l $(($2 + 1)) "$1" -- "$fn-%d" 2>/dev/null
+    mv -- "$fn-$2" "$tmppdfpage"
+    timeout 15 podofouncompress "$tmppdfpage" "$3" 2>/dev/null >/dev/null
+    rm "$tmppdfpage"
+}
+
+bbox-filter () {
+    grep -aoP "/BBox\s?\[[\d\s\.-]*\]" |
+    cut -d '[' -f2 |
+    cut -d ']' -f1 |
+    awk '{$1=$1;print}' |
+    tr -s ' ' ' ' |
+    cut -d' ' -f2,4 | tee "$bboxtmp" |
+    while read y_bot y_top; do
+        cat <(echo "$y_bot"; echo "$y_top") \
+            <("$DIR"/../parsing/get-tjs.py "$tmppdf" | tail -n+2 | cut -d',' -f2) | "$DIR"/flbb.py
+    done | sort | uniq | filter-line
+    cat "$bboxtmp" |
+        while read y_bot y_top; do
+            echo "BBox $1 $2 $y_bot $y_top"
+        done
+}
+
+main () {
+    decompress-pdf "$1" "$2" "$tmppdf"
+    timeout 15 cat "$tmppdf" |
+        grep -aoP "/BBox\s?\[[\d\s\.-]*\]" |
+        cut -d '[' -f2 |
+        cut -d ']' -f1 |
+        awk '{$1=$1;print}' |
+        tr -s ' ' ' ' |
+        cut -d' ' -f2,4 | tee "$bboxtmp" |
+        while read y_bot y_top; do
+            cat <(echo "$y_bot"; echo "$y_top") \
+                <("$DIR"/../parsing/get-tjs.py "$tmppdf" | tail -n+2 | cut -d',' -f2) | "$DIR"/flbb.py
+        done | sort | uniq | filter-line
+    cat "$bboxtmp" |
+        while read y_bot y_top; do
+            echo "BBox $1 $2 $y_bot $y_top"
+        done
+}
+
+
+tmpmatchingbbx=$(mktemp)
+tmppresuf=$(mktemp)
+tmpfonts=$(mktemp)
+tmppdf=$(mktemp)
+bboxtmp=$(mktemp)
+export tmppdf tmppresuf tmpmatchingbbx tmppdf bboxtmp
+main "$1" "$2"
+rm "$tmppdf" "$bboxtmp" "$tmpmatchingbbx" "$tmppresuf" "$tmpfonts"

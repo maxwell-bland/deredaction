@@ -1,0 +1,47 @@
+q
+q
+q
+614.40 0 0 791.04 0.00 0.24 cm
+/I4 Do
+Q
+Q
+q
+1 0 0 1 0 0 cm
+0 j
+1 w
+/APF1 8 Tf
+8 TL
+0.996 0.996 0.996 rg
+0 0 0 RG
+/APGS1 gs
+55 559 214 46 re
+S
+/APGS2 gs
+BT
+0 Tr
+0 0 0 rg
+1 0 0 1 138.224 579.533 Tm
+(\(b\)\(6\), \(b\)\(7\)c) Tj
+ET
+0.996 0.996 0.996 rg
+0 0 0 RG
+/APGS1 gs
+100 508 132 23 re
+S
+/APGS2 gs
+BT
+0 Tr
+0 0 0 rg
+1 0 0 1 142.224 517.033 Tm
+(\(b\)\(6\), \(b\)\(7\)c) Tj
+ET
+Q
+Q
+q
+BT
+0 0.14118 0.56078 rg
+/Xi0 12 Tf
+1 0 0 1 89.56 767 Tm
+(Case 1:05-cv-01812-RBW     Document 49-13      Filed 03/28/2008     Page 1 of 3) Tj
+ET
+Q

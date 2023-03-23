@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Combines the lines of the given input PDF file
+DIR=$(dirname $(realpath $0))
+y=NaN;
+$DIR/get-tjs.py $1 |
+tail -n+2 |
+while read l; do
+  newY=$(echo $l | csvtool col 2 - 2>/dev/null);
+  if [ "$newY" != "$y" ]; then
+    echo "";
+    echo -n $(echo $l | cut -d ',' -f1 2>/dev/null) "$newY ";
+    y=$newY;
+  fi;
+  echo -n "$(echo $l | cut -d '|' -f4)";
+done

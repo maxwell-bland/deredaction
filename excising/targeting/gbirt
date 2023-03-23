@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+# This script takes in a y coordinate. It then, rather than generating a target
+# based upon metadata, finds targets for that y coordinate based upon Form
+# XObjects (see parsing/xbox-printer, there can be multiple).
+#
+# It prints:
+# - An initial x value set to the character (not space) closest to the right of
+# the XObject unless there is no character to the right, then it will be set to
+# the left.
+# - The width of the XObject. 
+use File::Basename;
+my $dirname = dirname(__FILE__);
+
+@xs = reverse map { @arr = split /\s/, $_; $arr[2] } 
+    `$dirname/../c-src/core/get-states page.pdf` =~ 
+    /.*CHAR.*y: $ARGV[0].*/g;
+
+map { $i = 0; 
+    until ($_->[0] + $_->[2] > $xs[++$i]) {}; print "$xs[$i - 1]\t", $_->[2] + $xs[$i - 1], "\n"; 
+} grep { $ARGV[0] > $_->[1] && $ARGV[0] < $_->[1] + $_->[3]; 
+} map { [split /\s/, $_] } `$dirname/../parsing/xbox-printer page.pdf`;

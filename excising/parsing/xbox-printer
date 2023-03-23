@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+'''
+This script takes in a pdf file as the first argument and 
+searches for box draw commands in Form XObjects, a typical
+method for drawing the black boxes associated with redactions.
+
+It assumes the PDF is a single page and uncompressed, as 
+with most scripts in this project.
+
+For the pdf in question, it prints out the 
+x y x_delta y_delta of each box.
+
+written by bland on 05/22/2021
+'''
+import pikepdf
+import sys
+pdf = pikepdf.open(sys.argv[1])
+
+boxes = []
+for o in pdf.objects:
+    if (hasattr(o, 'keys') and 
+        all(x in o.keys() for x in ('/Type', '/BBox')) and 
+        pikepdf.Name('/XObject') == o.Type and 
+        o.Subtype == pikepdf.Name('/Form')):
+        boxes.append(o)
+
+def is_box_draw(stream_list, i):
+    return (stream[i][1] == pikepdf.Operator('cm') and
+           i < len(stream) - 4 and
+           stream[i + 1][1] == pikepdf.Operator('m') and
+           all(stream[j][1] == pikepdf.Operator('l') for 
+               j in range(i + 2, i + 5)))
+
+for b in boxes:
+    stream = pikepdf.parse_content_stream(b)
+    for i in range(len(stream)):
+        if is_box_draw(stream, i):
+            w = stream[i+3][0][0] - stream[i + 1][0][0]
+            h = stream[i+3][0][1] - stream[i + 1][0][1]
+            if (abs(w) > 3 and abs(h) > 3):
+                print(f'{str(stream[i][0][4] + stream[i + 1][0][0])}', end='\t') 
+                print(f'{str(stream[i][0][5] + stream[i + 1][0][1])}', end='\t') 
+                print(f'{str(w)}', end='\t') 
+                print(f'{str(h)}') 

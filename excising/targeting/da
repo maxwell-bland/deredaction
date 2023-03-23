@@ -1,0 +1,82 @@
+#!/usr/bin/env perl
+# This file determines the particular type of adjustments used within a 
+# target_list.txt file for each different target listed in the file, 
+# and prints out the possible adjustment types (if ms-word then also 
+# the font and the size of the font).
+#
+# This is not going to work in cases where the font changes mid-line,
+# many other edge conditions, but it should be enough for pulling out
+# immediately interesting test cases ...
+use File::Basename;
+use File::Temp qw/ tempfile /;
+$dirname = dirname(__FILE__);
+
+sub get_font {
+  /\[REDACTION(?:\s+\S+){2}\s(?:\S+\+)?(\S+).*\n/;
+  $s = lc $1;
+  $/ = "\n";
+  open $sup_fonts, "$dirname/../ms-word/supported-fonts.txt";
+  while (<$sup_fonts>) { last if /^$s\s/; }
+  close $sup_fonts;
+  $/ = "";
+  /\S+\s(\S+)/;
+  return $1;
+}
+
+@years = (2012, 2020);
+$/ = "";
+while (<>) {
+  # TODO fix comb so it doesn't add these dumb hypersmall adjustments
+  s/\(-?\d\.\d+e-\d+\)//g;
+  $rec = $_;
+  $rec =~ s/\s+$//g;
+  $font = get_font();
+  $rec =~ /\nLINE\s\[(.*?)<mask>/;
+  $pre = $1;
+  $pre =~ s/'/\\'/g;
+  $rec =~ /\nRAW_LINE\s\[(.*?)\(\S+\)\[REDACTION.*/;
+  $pre_adj = $1;
+  $pre_adj =~ s/'/\\'/g;
+  print "$rec\n";
+
+  # Attempt to match MS Word adjustments if fail at exact match, 
+  # measure the amount of error.
+  map { 
+    $year = $_;
+    map { 
+        /(\d+).json$/;
+        $matched_adj = `(echo '$pre_adj'; echo '[]'; echo '$pre' | 
+             $dirname/../ms-word/wl $dirname/../ms-word/ttf/$font.json $_
+          ) | $dirname/../c-src/adjustment/ms-tj-$year $1 2>/dev/null | 
+          cut -f2`;
+        if ( $matched_adj ne "" ) {
+          print "MS-WORD 0 $font $year $1\n";
+        } else {
+          $matched_adj = `(echo '[]'; echo '[]'; echo '$pre' | 
+               $dirname/../ms-word/wl $dirname/../ms-word/ttf/$font.json $_
+            ) | $dirname/../c-src/adjustment/ms-tj-$year $1 2>/dev/null | 
+            cut -f2`;
+          chomp $matched_adj;
+          $diff = `(echo '$pre_adj'; echo '[]'; echo '$matched_adj') | 
+                    $dirname/../c-src/adjustment/adj-diff`;
+          chomp $diff;
+          if ( $diff ne "" ) {
+            print "MS-WORD $diff $font $year $1\n";
+          }
+        }
+      } glob "$dirname/../ms-word/$_/$font-*.json"; } @years;
+
+  # Check for a fixed per-character adjustment. If failed, print 
+  # how many characters did not match
+  $_ = $rec;
+  ($fh, $f) = tempfile();
+  /\nADJUSTMENTS\s+(.*?)\s\[/;
+  print $fh "$1\n";
+  map { 
+    s/\(\S+\)\[REDACTION.*?\]//g; print $fh "$_\n"; 
+    } /\nRAW_LINE\s+(.*?)\n/;
+  close $fh;
+  print `cat $f | $dirname/../tj/is_fixed_adj.py`;
+  print "\n";
+  `rm $f`;
+}

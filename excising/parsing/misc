@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Miscellaneous Parsing Functions
+
+remove-space-adjs () (
+	sed -e 's/ (-\?[[:digit:]]\+\.[[:digit:]]\+)/ /g'
+)
+
+remove-adjs () (
+	sed -e 's/(-\?[[:digit:]]\+\.[[:digit:]]\+)//g'
+)

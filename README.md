@@ -6,12 +6,7 @@ code for the Story Beyond the Eye: Glyph Positions Break PDF Redaction paper.
 Remediation efforts and questionable legality prevent me from releasing the
 code publicly to automatically break redactions: regardless of how spicy the
 results would be or how many sleepless nights were spent, I will not be caught
-giving a fully automatic .45 to any small child.
-
-But, if you are a world-weary scholar scraping what you can together for rent,
-I'll give you all the code on valid scientific request, for reproduction
-purposes and to make your research easier, so long as you agree to a few
-promises, so as to not hurt your future career.
+giving a fully automatic machine gun to any small child.
 
 Without further ado, let's talk about what this repository contains.
 
@@ -135,6 +130,8 @@ security policy `PDF' @ error/constitute.c/IsCoderAuthorized/421` see
 
 Feel free to let me know if anything goes wrong. For now my email is
 `mb28@illinois.edu`.
+
+If you are a scholart, email me and I can give you the full code and datasets on valid scientific request, for reproduction purposes and to make your research easier!
 
 There are also lots of small easter eggs buried around this repository that may
 help future research.

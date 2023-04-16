@@ -14,11 +14,12 @@ Without further ado, let's talk about what this repository contains.
 
 A submodule linking to a highly precise PDF Glyph Positioning, Text Analysis,
 and Parsing Library, PDF CMap Parsing Library. This compiles using just two
-makefiles.  To build it, just compile the poppler version by `cd lib/poppler`,
-then here's the instructions.
+makefiles.  To build it:
 
 ```
-sudo apt install cmake libfreetype-dev libfontconfig-dev libopenjp2-7-dev
+# on some Ubuntu distributions (18.04), replace libfreetype-dev with libfreetype6-dev
+sudo apt install cmake libfreetype-dev libfontconfig-dev libopenjp2-7-dev 
+cd PDF-Text-Analysis/lib/poppler
 mkdir build
 cd build
 cmake ..
@@ -70,7 +71,7 @@ repository as well that you may try the code out on.
 
 ### Building Nonexcising Redaction Location Algorithm
 
-`cd` into the defenses directory and _copy over the PDF-Text-Analysis_ part we
+`cd redaction-defenses` into the defenses directory and _copy over the PDF-Text-Analysis_ part we
 compiled above into this directory using `cp -r ../PDF-Text-Analysis .` 
 
 ```
@@ -93,7 +94,7 @@ and there are still some remnants of the early code for deredaction.
 Thankfully, I don't believe what remains is too easy to adapt, and unfortunately a lot
 of it is tied up in the methods by which we correctly identify excising redactions.
 
-Make sure you have java installed!
+Make sure you have java installed! From the root directory of this repo:
 
 ```
 pdfseparate inconspicuous_pdf.pdf inconspicuous_pdf.pdf-%d

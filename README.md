@@ -18,7 +18,7 @@ makefiles.  To build it:
 
 ```
 # on some Ubuntu distributions (18.04), replace libfreetype-dev with libfreetype6-dev
-sudo apt install cmake libfreetype-dev libfontconfig-dev libopenjp2-7-dev 
+sudo apt install cmake libfreetype-dev libfontconfig-dev libopenjp2-7-dev build-essential libjpeg-dev libnss-tls
 cd PDF-Text-Analysis/lib/poppler
 mkdir build
 cd build
@@ -27,9 +27,11 @@ make
 make install
 # CMake configuration options can be set using the -D option. eg
 #  cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=release
+cd ../../../adjustment
+make VectorString.o
+cd ..
+make pts
 ```
-
-then `cd adjustment` and `make VectorString.o` then run `make pts` in the top level.
 
 and kablam, you are done.
 
@@ -53,6 +55,34 @@ has come out since then.
 ./PDF-Text-Analysis/pts inconspicuous_pdf.pdf 1
 ```
 
+#### Locale Errors
+
+If you receive `what():  locale::facet::_S_create_c_locale name not valid Aborted` 
+then a UTF-8 locale has not been properly configured on your machine.
+
+Uncomment the line "en_US.UTF-8 UTF-8" in /etc/locale.gen and then run the command 
+`sudo locale-gen`, which should fix the missing locale information. Other standard 
+unicode locales should also work (untested).
+
+We have confirmed it works for a standard en_US (or similar) Unicode (UTF-8) locale:
+```
+LANG=en_US.UTF-8
+LANGUAGE=
+LC_CTYPE="en_US.UTF-8"
+LC_NUMERIC="en_US.UTF-8"
+LC_TIME="en_US.UTF-8"
+LC_COLLATE="en_US.UTF-8"
+LC_MONETARY="en_US.UTF-8"
+LC_MESSAGES="en_US.UTF-8"
+LC_PAPER="en_US.UTF-8"
+LC_NAME="en_US.UTF-8"
+LC_ADDRESS="en_US.UTF-8"
+LC_TELEPHONE="en_US.UTF-8"
+LC_MEASUREMENT="en_US.UTF-8"
+LC_IDENTIFICATION="en_US.UTF-8"
+LC_ALL=
+```
+
 ### A Note on the Structure
 
 - core: the wrapper for analyzing the PDF structure recorded in the modified poppler
@@ -71,11 +101,12 @@ repository as well that you may try the code out on.
 
 ### Building Nonexcising Redaction Location Algorithm
 
-`cd redaction-defenses` into the defenses directory and _copy over the PDF-Text-Analysis_ part we
-compiled above into this directory using `cp -r ../PDF-Text-Analysis .` 
+From the root of the repository, after building the PDF-Text-Analysis project:
 
 ```
 pip3 install PyMuPDF
+cd redaction-defenses
+cp -r ../PDF-Text-Analysis .
 ```
 
 ### Running
@@ -94,7 +125,13 @@ and there are still some remnants of the early code for deredaction.
 Thankfully, I don't believe what remains is too easy to adapt, and unfortunately a lot
 of it is tied up in the methods by which we correctly identify excising redactions.
 
-Make sure you have java installed! From the root directory of this repo:
+First, install OpenJDK 17.0.6
+
+```
+sudo apt install openjdk-17-*
+```
+
+From the root directory of this repo:
 
 ```
 pdfseparate inconspicuous_pdf.pdf inconspicuous_pdf.pdf-%d

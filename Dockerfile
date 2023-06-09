@@ -41,6 +41,7 @@ RUN apt-get -y install zlib1g-dev
 RUN apt-get -y install libcairo2-doc
 RUN apt-get -y install libglib2.0-doc
 RUN apt-get -y install python3-pip
+RUN apt-get -y install python3-numpy
 
 COPY . .
 WORKDIR /app/PDF-Text-Analysis/lib/poppler
